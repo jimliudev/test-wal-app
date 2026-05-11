@@ -1,0 +1,35 @@
+name: Deploy to Walrus Sites
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: write
+  actions: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy to Walrus Sites (Testnet)
+        uses: zktx-io/walrus-sites-ga@v0.4.7
+        with:
+          site-path: static
+          network: testnet
+          epochs: 10
+        env:
+          SUI_ADDRESS: ${{ vars.SUI_ADDRESS }}
+          SUI_KEYSTORE: ${{ secrets.SUI_KEYSTORE }}
+
+      - name: Delete artifacts
+        if: always()
+        uses: geekyeggo/delete-artifact@v5
+        with:
+          name: "*"
+          failOnError: false

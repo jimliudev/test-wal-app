@@ -1,0 +1,16 @@
+{
+  "name": "test-wal-app",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@cmdoss/walrus-site-builder": "^2.6.3",
+    "walrus-sites-deploy": "^0.1.0"
+  }
+}
