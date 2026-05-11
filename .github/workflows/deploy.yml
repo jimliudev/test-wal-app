@@ -57,12 +57,8 @@ jobs:
           walrus --config ~/.sui/sui_config/client.yaml get-wal 2>&1 || echo "WAL faucet skipped"
 
       - name: Deploy site
-        env:
-          SUI_ADDRESS: ${{ vars.SUI_ADDRESS }}
         run: |
-          site-builder deploy ./static \
-            --epochs 10 \
-            --sui-config ~/.sui/sui_config/client.yaml 2>&1
+          site-builder deploy ./static --epochs 10 2>&1
 
       - name: Delete artifacts
         if: always()
