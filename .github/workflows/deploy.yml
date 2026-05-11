@@ -56,6 +56,12 @@ jobs:
         run: |
           walrus --config ~/.sui/sui_config/client.yaml get-wal 2>&1 || echo "WAL faucet skipped"
 
+      - name: Download Walrus client config
+        run: |
+          mkdir -p ~/.config/walrus
+          curl -sSL https://raw.githubusercontent.com/MystenLabs/walrus/main/setup/client_config_testnet.yaml \
+            -o ~/.config/walrus/client_config.yaml
+
       - name: Create sites config
         run: |
           mkdir -p ~/.config/walrus
