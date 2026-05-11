@@ -72,7 +72,6 @@ jobs:
               staking_object: 0xbe46180321c30aab2f8b3501e24048377287fa708018a5b7c2792b35fe339ee3
               general:
                 wallet_env: testnet
-                walrus_context: testnet
           default_context: testnet
           EOF
 
