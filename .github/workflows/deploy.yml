@@ -6,26 +6,63 @@ on:
   workflow_dispatch:
 
 permissions:
-  id-token: write
   contents: write
   actions: write
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    env:
-      SUI_ADDRESS: ${{ vars.SUI_ADDRESS }}
-      SUI_KEYSTORE: ${{ secrets.SUI_KEYSTORE }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Deploy to Walrus Sites (Testnet)
-        uses: zktx-io/walrus-sites-ga@v0.4.7
-        with:
-          site-path: static
-          network: testnet
-          epochs: 10
+      - name: Install Walrus CLI
+        run: |
+          curl -sSLo walrus https://github.com/zktx-io/walrus-sites-ga/releases/download/$(curl -s https://api.github.com/repos/zktx-io/walrus-sites-ga/releases/latest | jq -r .tag_name)/walrus-x86_64-testnet
+          chmod +x walrus
+          sudo mv walrus /usr/local/bin/walrus
+          walrus --version
+
+      - name: Install site-builder
+        run: |
+          curl -sSLo site-builder https://github.com/zktx-io/walrus-sites-ga/releases/download/v0.4.7/site-builder-x86_64-testnet
+          chmod +x site-builder
+          sudo mv site-builder /usr/local/bin/site-builder
+
+      - name: Set up Sui wallet
+        env:
+          SUI_KEYSTORE: ${{ secrets.SUI_KEYSTORE }}
+          SUI_ADDRESS: ${{ vars.SUI_ADDRESS }}
+        run: |
+          mkdir -p ~/.sui/sui_config
+          # Write keystore as compact single-line JSON
+          echo $SUI_KEYSTORE | tr -d '\n' > ~/.sui/sui_config/sui.keystore
+          cat > ~/.sui/sui_config/client.yaml << EOF
+          ---
+          keystore:
+            File: $HOME/.sui/sui_config/sui.keystore
+          envs:
+            - alias: testnet
+              rpc: "https://fullnode.testnet.sui.io:443"
+          active_env: testnet
+          active_address: "$SUI_ADDRESS"
+          EOF
+          echo "Keystore content:"
+          cat ~/.sui/sui_config/sui.keystore
+          echo "Wallet check:"
+          sui client active-address --client.config ~/.sui/sui_config/client.yaml 2>&1 || true
+
+      - name: Get WAL tokens (faucet)
+        run: |
+          walrus --config ~/.sui/sui_config/client.yaml get-wal 2>&1 || echo "WAL faucet skipped"
+
+      - name: Deploy site
+        env:
+          SUI_ADDRESS: ${{ vars.SUI_ADDRESS }}
+        run: |
+          site-builder deploy ./static \
+            --epochs 10 \
+            --sui-config ~/.sui/sui_config/client.yaml 2>&1
 
       - name: Delete artifacts
         if: always()
