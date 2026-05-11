@@ -56,24 +56,13 @@ jobs:
         run: |
           walrus --config ~/.sui/sui_config/client.yaml get-wal 2>&1 || echo "WAL faucet skipped"
 
-      - name: Download Walrus client config
+      - name: Download Walrus configs
         run: |
           mkdir -p ~/.config/walrus
-          curl -sSL https://raw.githubusercontent.com/MystenLabs/walrus/main/setup/client_config_testnet.yaml \
+          curl -sSL https://github.com/zktx-io/walrus-sites-ga/releases/download/v0.4.7/client_config-testnet.yaml \
             -o ~/.config/walrus/client_config.yaml
-
-      - name: Create sites config
-        run: |
-          mkdir -p ~/.config/walrus
-          cat > ~/.config/walrus/sites-config.yaml << 'EOF'
-          contexts:
-            testnet:
-              package: 0xf99aee9f21493e1590e7e5a9aea6f343a1f381031a04a732724871fc294be799
-              staking_object: 0xbe46180321c30aab2f8b3501e24048377287fa708018a5b7c2792b35fe339ee3
-              general:
-                wallet_env: testnet
-          default_context: testnet
-          EOF
+          curl -sSL https://github.com/zktx-io/walrus-sites-ga/releases/download/v0.4.7/sites-config-testnet.yaml \
+            -o ~/.config/walrus/sites-config.yaml
 
       - name: Deploy site
         run: |
