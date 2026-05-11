@@ -18,7 +18,8 @@ jobs:
 
       - name: Install Walrus CLI
         run: |
-          curl -sSLo walrus https://github.com/zktx-io/walrus-sites-ga/releases/download/$(curl -s https://api.github.com/repos/zktx-io/walrus-sites-ga/releases/latest | jq -r .tag_name)/walrus-x86_64-testnet
+          VERSION=$(curl -s https://api.github.com/repos/zktx-io/walrus-sites-ga/releases/latest | jq -r .tag_name)
+          curl -sSLo walrus https://github.com/zktx-io/walrus-sites-ga/releases/download/${VERSION}/walrus-x86_64-testnet
           chmod +x walrus
           sudo mv walrus /usr/local/bin/walrus
           walrus --version
@@ -28,6 +29,7 @@ jobs:
           curl -sSLo site-builder https://github.com/zktx-io/walrus-sites-ga/releases/download/v0.4.7/site-builder-x86_64-testnet
           chmod +x site-builder
           sudo mv site-builder /usr/local/bin/site-builder
+          curl -sSLo /usr/local/bin/sites-config.yaml https://github.com/zktx-io/walrus-sites-ga/releases/download/v0.4.7/sites-config-testnet.yaml
 
       - name: Set up Sui wallet
         env:
@@ -35,38 +37,30 @@ jobs:
           SUI_ADDRESS: ${{ vars.SUI_ADDRESS }}
         run: |
           mkdir -p ~/.sui/sui_config
-          # Write keystore as compact single-line JSON
-          echo $SUI_KEYSTORE | tr -d '\n' > ~/.sui/sui_config/sui.keystore
+          echo "$SUI_KEYSTORE" > ~/.sui/sui_config/sui.keystore
           cat > ~/.sui/sui_config/client.yaml << EOF
           ---
           keystore:
-            File: $HOME/.sui/sui_config/sui.keystore
+            File: /home/runner/.sui/sui_config/sui.keystore
           envs:
             - alias: testnet
               rpc: "https://fullnode.testnet.sui.io:443"
           active_env: testnet
           active_address: "$SUI_ADDRESS"
           EOF
-          echo "Keystore content:"
-          cat ~/.sui/sui_config/sui.keystore
-          echo "Wallet check:"
-          sui client active-address --client.config ~/.sui/sui_config/client.yaml 2>&1 || true
+
+      - name: Configure Walrus
+        run: |
+          mkdir -p ~/.walrus
+          curl -sSLo ~/.walrus/client_config.yaml https://github.com/zktx-io/walrus-sites-ga/releases/download/v0.4.7/client_config-testnet.yaml
 
       - name: Get WAL tokens (faucet)
         run: |
-          walrus --config ~/.sui/sui_config/client.yaml get-wal 2>&1 || echo "WAL faucet skipped"
-
-      - name: Download Walrus configs
-        run: |
-          mkdir -p ~/.config/walrus
-          curl -sSL https://github.com/zktx-io/walrus-sites-ga/releases/download/v0.4.7/client_config-testnet.yaml \
-            -o ~/.config/walrus/client_config.yaml
-          curl -sSL https://github.com/zktx-io/walrus-sites-ga/releases/download/v0.4.7/sites-config-testnet.yaml \
-            -o ~/.config/walrus/sites-config.yaml
+          walrus get-wal 2>&1 || echo "WAL faucet skipped"
 
       - name: Deploy site
         run: |
-          site-builder deploy ./static --epochs 10 2>&1
+          site-builder --config /usr/local/bin/sites-config.yaml publish ./static --epochs 10 2>&1
 
       - name: Delete artifacts
         if: always()
