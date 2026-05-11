@@ -37,7 +37,7 @@ jobs:
           SUI_ADDRESS: ${{ vars.SUI_ADDRESS }}
         run: |
           mkdir -p ~/.sui/sui_config
-          echo "$SUI_KEYSTORE" > ~/.sui/sui_config/sui.keystore
+          echo $SUI_KEYSTORE | tr -d '\n' > ~/.sui/sui_config/sui.keystore
           cat > ~/.sui/sui_config/client.yaml << EOF
           ---
           keystore:
